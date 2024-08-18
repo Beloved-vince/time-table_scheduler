@@ -5,7 +5,15 @@ __pycache__/
 
 # C extensions
 *.so
+# Django migration files
+*/migrations/
+!*/migrations/__init__.py
 
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 # Distribution / packaging
 .Python
 build/
