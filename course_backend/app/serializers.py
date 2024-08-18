@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import User, UploadedFile
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from .models import User
@@ -31,7 +31,7 @@ class UploadedFileSerializer(serializers.ModelSerializer):
 
 
 
-class LoginSerializer(TokenObtainPairSerializer):
+class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True)
 
@@ -39,18 +39,16 @@ class LoginSerializer(TokenObtainPairSerializer):
         email = attrs.get('email')
         password = attrs.get('password')
 
-        # Check if user exists
         user = User.objects.filter(email=email).first()
-        print(user)
         if not user or not user.check_password(password):
             raise AuthenticationFailed("Invalid authentication credentials")
 
         if not user.is_active:
             raise AuthenticationFailed("Your account is not active.")
 
-        # Call parent validate method
-        data = super().validate(attrs)
-        data.update({
+        refresh = RefreshToken.for_user(user)
+        return {
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
             'user_id': user.id,
-        })
-        return data
+        }
