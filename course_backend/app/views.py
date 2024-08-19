@@ -7,8 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 import random
 import openpyxl
 from .models import UploadedFile, User
-from rest_framework.exceptions import AuthenticationFailed
-
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 
 class UserSignupView(APIView):
@@ -33,6 +32,7 @@ class LoginView(TokenObtainPairView):
 
 
 class UploadDataView(APIView):
+    permission_classes = (IsAuthenticated, AllowAny)
     def post(self, request, *args, **kwargs):
         if 'file' not in request.FILES:
             return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
