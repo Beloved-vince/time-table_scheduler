@@ -125,7 +125,6 @@ class ResultView(APIView):
             workbook = openpyxl.load_workbook(uploaded_file.file)
             sheet = workbook.active
 
-            # Read rows from the sheet
             rows = [row for row in sheet.iter_rows(values_only=True)]
 
             # Convert tuples to list of strings for the response
@@ -136,4 +135,4 @@ class ResultView(APIView):
         except UploadedFile.DoesNotExist:
             return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({'error': f'Error processing file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'Error processing file: {str(e)}'}, status=status.HTTP_404_NOT_FOUND)
