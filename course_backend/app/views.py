@@ -6,13 +6,9 @@ import random
 import openpyxl
 from .models import UploadedFile
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.contrib.auth import authenticate
 
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
-from rest_framework import status
 
 User = get_user_model()
 
@@ -39,8 +35,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
-from rest_framework import status
+
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]  # Make sure unauthenticated users can access this view
@@ -81,38 +76,16 @@ class UploadDataView(APIView):
 
         file = request.FILES['file']
 
-        if not file.name.endswith(('.xlsx', '.xls')):
+        if not file.name.endswith(('.xlsx', '.xls', '.csv')):
             return Response({'error': 'Invalid file type. Only Excel files are accepted.'}, status=status.HTTP_400_BAD_REQUEST)
 
         uploaded_file = UploadedFile(file=file)
         uploaded_file.save()
+        return Response({
+            'message': 'Data uploaded successfully',
+            'file_id': uploaded_file.id
+        }, status=status.HTTP_200_OK)        
 
-        try:
-            # Load the workbook
-            workbook = openpyxl.load_workbook(uploaded_file.file.path)
-            sheet = workbook.active
-
-            rows = [row for row in sheet.iter_rows(values_only=True)]
-
-            # Shuffle the rows randomly
-            random.shuffle(rows)
-
-            # Convert tuples to list of strings for the response
-            rows_as_strings = [str(row) for row in rows]
-
-            return Response({'data': rows_as_strings}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': f'Error processing file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import status
-from django.contrib.auth import authenticate
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -133,3 +106,34 @@ class LoginView(APIView):
             }, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ResultView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        file_id = request.query_params.get('file_id')
+
+        if not file_id:
+            return Response({'error': 'No file ID provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Retrieve the UploadedFile instance
+            uploaded_file = UploadedFile.objects.get(id=file_id)
+
+            # Load the workbook
+            workbook = openpyxl.load_workbook(uploaded_file.file)
+            sheet = workbook.active
+
+            # Read rows from the sheet
+            rows = [row for row in sheet.iter_rows(values_only=True)]
+
+            # Convert tuples to list of strings for the response
+            rows_as_strings = [str(row) for row in rows]
+
+            return Response({'data': rows_as_strings}, status=status.HTTP_200_OK)
+
+        except UploadedFile.DoesNotExist:
+            return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': f'Error processing file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
