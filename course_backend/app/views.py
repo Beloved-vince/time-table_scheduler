@@ -2,37 +2,79 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from app.serializers import UserSignupSerializer, LoginSerializer
-from rest_framework_simplejwt.views import TokenObtainPairView
 import random
 import openpyxl
-from .models import UploadedFile, User
+from .models import UploadedFile
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 
-class UserSignupView(APIView):
-    def post(self, request, *args, **kwargs):
-        serializer = UserSignupSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()  # Save the user after successful validation
-            return Response("User created successfully", status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import get_user_model
+from rest_framework import status
 
+User = get_user_model()
 
-
-class LoginView(TokenObtainPairView):
-    serializer_class = LoginSerializer
-    permission_classes = ()
+class SignUpAPIView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+        email = request.data.get('email')
+        password = request.data.get('password')
+        full_name = request.data.get('full_name')
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "Email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create_user(
+            email=email,
+            password=password,
+            full_name=full_name,
+        )
+
+        return Response({"message": "Sign-up successful"}, status=status.HTTP_201_CREATED)
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework import status
+
+class LoginAPIView(APIView):
+    permission_classes = [AllowAny]  # Make sure unauthenticated users can access this view
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        user = authenticate(email=email, password=password)
+        
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user_id': user.id,
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# class LoginView(TokenObtainPairView):
+#     serializer_class = LoginSerializer
+#     permission_classes = ()
+
+#     def post(self, request, *args, **kwargs):
+#         serializer = LoginSerializer(data=request.data)
+#         if serializer.is_valid():
+#             return Response(serializer.validated_data, status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class UploadDataView(APIView):
-    permission_classes = (IsAuthenticated, AllowAny)
+    permission_classes = [IsAuthenticated, AllowAny]
     def post(self, request, *args, **kwargs):
         if 'file' not in request.FILES:
             return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
@@ -61,3 +103,33 @@ class UploadDataView(APIView):
             return Response({'data': rows_as_strings}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': f'Error processing file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
+from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        user = authenticate(email=email, password=password)
+        
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user_id': user.id,
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
