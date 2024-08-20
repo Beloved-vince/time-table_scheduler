@@ -1,59 +1,63 @@
+from django.contrib.auth.models import BaseUserManager
 from django.db import models
-from django.utils.translation import gettext_lazy as _
-from .managers import CustomUserManager
-from django.core.exceptions import ValidationError
-from django.contrib.auth.models import AbstractUser, Group, Permission, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, Group, Permission
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.db import models
+from django.contrib.auth.models import Group, Permission
 
+   
+from django.contrib.auth.models import BaseUserManager
 
-class User(AbstractUser, PermissionsMixin):
-    """
-    Custom user model that uses email or phone number as the unique identifier.
-    """
-    email = models.EmailField(unique=True, null=True)
-    full_name = models.CharField(max_length=500, null=True, blank=True)
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
-    verified = models.BooleanField(default=True)
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(email, password, **extra_fields)
+
+class CustomUser(AbstractBaseUser, PermissionsMixin):
+    email = models.EmailField(unique=True)
+    full_name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = []  # No required fields other than email
 
     objects = CustomUserManager()
-    groups = models.ManyToManyField(
-        Group,
-        related_name='custom_user_set',  # Custom related name
-        blank=True,
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name='custom_user_permissions_set',  # Custom related name
-        blank=True,
-    )
+
     def __str__(self):
         return self.email
 
-    def save(self, *args, **kwargs):
-        if not self.email:
-            raise ValueError(_("Either email or phone must be provided."))
-        super().save(*args, **kwargs)
-
-    @property
-    def username(self):
-        return self.email
-    @staticmethod
-    def get_username_field():
-        return User.USERNAME_FIELD
-
-    @staticmethod
-    def set_username_field(field):
-        if field not in ['email',]:
-            raise ValueError(_("Invalid field for USERNAME_FIELD."))
-        User.USERNAME_FIELD = field
-
-
-
-
+    # Adding related_name to avoid reverse accessor clashes
+    groups = models.ManyToManyField(
+        Group,
+        related_name='customuser_set',
+        blank=True,
+    )
+    
+    user_permissions = models.ManyToManyField(
+        Permission,
+        related_name='customuser_set',
+        blank=True,
+    )
+ 
+    
 class UploadedFile(models.Model):
     file = models.FileField(upload_to='uploaded_files/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
