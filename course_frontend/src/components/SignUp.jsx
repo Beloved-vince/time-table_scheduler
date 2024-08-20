@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import bg from "../assets/bg-t1.jpg";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const SignUp = () => {
   const styles = {
@@ -10,39 +11,29 @@ const SignUp = () => {
   const navigate = useNavigate();
   const base_url = "http://127.0.0.1:8000/v1/api";
   const [data, setData] = useState({
-    firstname: "",
-    lastname: "",
-    middlename: "",
+    full_name: "",
     email: "",
     password: "",
     confirm_password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [err, setErr] = useState();
+  const [err, setErr] = useState("");
+  const [msg, setMsg] = useState("");
   const handleChange = (e) => {
     const { name, value } = e.target;
     setData((prev) => ({ ...prev, [name]: value }));
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Hellow World");
+
     setIsLoading(true);
     try {
-      const res = await fetch(`${base_url}/signup/`, {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      });
-      const response_data = await res.json();
-
-      if (response_data.email) {
-        setErr(response_data?.email);
-      }
+      const res = await axios.post(`${base_url}/signup/`, data);
+      setMsg(res.data?.message);
       navigate("/login");
-      setErr(response_data);
     } catch (error) {
       console.log(error);
-      setErr(error?.detail);
+      setErr(error?.response?.data?.error);
     } finally {
       setIsLoading(false);
     }
@@ -64,34 +55,34 @@ const SignUp = () => {
       </div>
       <form
         onSubmit={handleSubmit}
-        className="px-2 w-full md:w-1/2  space-y-6 gap-x-2 md:p-5 box-border"
+        className="px-2 w-full flex flex-col md:w-1/2  space-y-6 gap-x-2 md:p-5 box-border"
       >
         {err ? (
-          <span className="col-span-2 px-2 py-3 text-red-600 border-l-4 border-red-600 bg-red-500/10">
+          <span className="px-2 py-3 text-red-600 border-l-4 border-red-600 bg-red-500/10">
             {err}
           </span>
         ) : null}
         <h2 className="text-3xl text-center md:text-4xl py-2 font-semibold text-[#1560bd]">
           Registration Form
         </h2>
-        <div className="flex flex-col md:flex-row md:items-center gap-1">
+        <div className="flex flex-col md:flex-row md:items-center gap-1 w-full">
           <label
             htmlFor="firstname"
             className="text-left whitespace-nowrap min-w-[11rem]"
           >
-            First name
+            Full name
           </label>
           <input
             type="text"
             id="firstname"
-            defaultValue={data.firstname}
-            name="firstname"
+            defaultValue={data.full_name}
+            name="full_name"
             onChange={handleChange}
             required
             className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
           />
         </div>
-        <div className="flex flex-col md:flex-row md:items-center gap-1">
+        {/* <div className="flex flex-col md:flex-row md:items-center gap-1">
           <label
             htmlFor="lastname"
             className="text-left whitespace-nowrap min-w-[11rem]"
@@ -124,8 +115,8 @@ const SignUp = () => {
             onChange={handleChange}
             className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
           />
-        </div>
-        <div className="flex flex-col md:flex-row md:items-center gap-1">
+        </div> */}
+        <div className="flex flex-col md:flex-row md:items-center gap-1 w-full">
           {" "}
           <label
             htmlFor="email"
@@ -180,7 +171,7 @@ const SignUp = () => {
           />
         </div>
 
-        <button className="w-1/2 mx-auto block py-5 bg-[#1560bd] text-white shadow-lg rounded-full">
+        <button className="w-1/2 mx-auto flex justify-center  items-center py-5 bg-[#1560bd] text-white shadow-lg rounded-full">
           {isLoading ? (
             <span className="animate-spin">
               <svg
