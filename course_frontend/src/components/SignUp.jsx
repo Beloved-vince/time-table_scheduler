@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import bg from "../assets/bg-t1.jpg";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
   const styles = {
     backgroundImage: `url(${bg})`,
   };
+  const navigate = useNavigate();
+  const base_url = "http://127.0.0.1:8000/v1/api";
   const [data, setData] = useState({
     firstname: "",
     lastname: "",
@@ -14,108 +17,40 @@ const SignUp = () => {
     password: "",
     confirm_password: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [err, setErr] = useState();
   const handleChange = (e) => {
     const { name, value } = e.target;
     setData((prev) => ({ ...prev, [name]: value }));
   };
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Hellow World");
+    setIsLoading(true);
     try {
-      // make the api call to ubmit form
-      console.log(data);
+      const res = await fetch(`${base_url}/signup/`, {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" },
+      });
+      const response_data = await res.json();
+
+      if (response_data.email) {
+        setErr(response_data?.email);
+      }
+      navigate("/login");
+      setErr(response_data);
     } catch (error) {
       console.log(error);
+      setErr(error?.detail);
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
-    <div className="h-screen w-full items-start flex justify-between">
-      <form
-        onSubmit={handleSubmit}
-        className="px-12 w-1/2 grid grid-cols-[auto,1fr] items-center gap-y-6 gap-x-2 p-5 box-border"
-      >
-        <h2 className="col-span-2 text-4xl py-2 font-semibold text-[#1560bd]">
-          Registration Form
-        </h2>
-        <label htmlFor="firstname" className="w-fit">
-          First name
-        </label>
-        <input
-          type="text"
-          id="firstname"
-          defaultValue={data.firstname}
-          name="firstname"
-          onChange={handleChange}
-          required
-          className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
-        />
-        <label htmlFor="lastname" className="w-fit">
-          Last name
-        </label>
-        <input
-          type="text"
-          id="lastname"
-          defaultValue={data.lastname}
-          name="lastname"
-          onChange={handleChange}
-          required
-          className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
-        />
-        <label htmlFor="middlename" className="w-fit">
-          Middle name
-        </label>
-        <input
-          type="text"
-          id="middlename"
-          defaultValue={data.middlename}
-          name="middlename"
-          onChange={handleChange}
-          className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
-        />
-
-        <label htmlFor="email" className="w-fit">
-          Email
-        </label>
-        <input
-          type="email"
-          id="email"
-          defaultValue={data.email}
-          name="email"
-          onChange={handleChange}
-          required
-          className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
-        />
-        <label htmlFor="password" className="w-fit">
-          Password
-        </label>
-        <input
-          type="password"
-          id="password"
-          defaultValue={data.password}
-          name="password"
-          onChange={handleChange}
-          required
-          className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
-        />
-        <label htmlFor="confirm_password" className="w-fit">
-          Confirm Password
-        </label>
-        <input
-          type="password"
-          id="confirm_password"
-          defaultValue={data.confirm_password}
-          name="confirm_password"
-          onChange={handleChange}
-          required
-          className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
-        />
-
-        <button className="col-span-2 w-full py-5 bg-[#1560bd] text-white shadow-lg rounded-full">
-          Sign Up
-        </button>
-      </form>
-
+    <div className="h-screen w-full items-start flex flex-col md:flex-row-reverse justify-between">
       <div
-        className="w-1/2 h-full rounded-l-xl flex flex-col gap-2 justify-center items-center  bg-blend-overlay bg-[#1560bd]"
+        className="w-full md:w-1/2 h-full py-5 rounded-l-xl flex flex-col gap-2 justify-center items-center  bg-blend-overlay bg-[#1560bd]"
         style={styles}
       >
         <p className="text-4xl text-white font-semibold">Welcome, Sign Up</p>
@@ -127,6 +62,154 @@ const SignUp = () => {
           Login
         </Link>
       </div>
+      <form
+        onSubmit={handleSubmit}
+        className="px-2 w-full md:w-1/2  space-y-6 gap-x-2 md:p-5 box-border"
+      >
+        {err ? (
+          <span className="col-span-2 px-2 py-3 text-red-600 border-l-4 border-red-600 bg-red-500/10">
+            {err}
+          </span>
+        ) : null}
+        <h2 className="text-3xl text-center md:text-4xl py-2 font-semibold text-[#1560bd]">
+          Registration Form
+        </h2>
+        <div className="flex flex-col md:flex-row md:items-center gap-1">
+          <label
+            htmlFor="firstname"
+            className="text-left whitespace-nowrap min-w-[11rem]"
+          >
+            First name
+          </label>
+          <input
+            type="text"
+            id="firstname"
+            defaultValue={data.firstname}
+            name="firstname"
+            onChange={handleChange}
+            required
+            className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
+          />
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center gap-1">
+          <label
+            htmlFor="lastname"
+            className="text-left whitespace-nowrap min-w-[11rem]"
+          >
+            Last name
+          </label>
+          <input
+            type="text"
+            id="lastname"
+            defaultValue={data.lastname}
+            name="lastname"
+            onChange={handleChange}
+            required
+            className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
+          />
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center gap-1">
+          {" "}
+          <label
+            htmlFor="middlename"
+            className="text-left whitespace-nowrap min-w-[11rem] "
+          >
+            Middle name
+          </label>
+          <input
+            type="text"
+            id="middlename"
+            defaultValue={data.middlename}
+            name="middlename"
+            onChange={handleChange}
+            className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
+          />
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center gap-1">
+          {" "}
+          <label
+            htmlFor="email"
+            className="text-left whitespace-nowrap min-w-[11rem]"
+          >
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            defaultValue={data.email}
+            name="email"
+            onChange={handleChange}
+            required
+            className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
+          />
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center gap-1">
+          {" "}
+          <label
+            htmlFor="password"
+            className="text-left whitespace-nowrap min-w-[11rem]"
+          >
+            Password
+          </label>
+          <input
+            type="password"
+            id="password"
+            defaultValue={data.password}
+            name="password"
+            onChange={handleChange}
+            required
+            className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
+          />
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center gap-1">
+          {" "}
+          <label
+            htmlFor="confirm_password"
+            className="text-left whitespace-nowrap min-w-[11rem]"
+          >
+            Confirm Password
+          </label>
+          <input
+            type="password"
+            id="confirm_password"
+            defaultValue={data.confirm_password}
+            name="confirm_password"
+            onChange={handleChange}
+            required
+            className="border border-[#d9d9d9] py-4 outline-none px-2 w-full rounded-full"
+          />
+        </div>
+
+        <button className="w-1/2 mx-auto block py-5 bg-[#1560bd] text-white shadow-lg rounded-full">
+          {isLoading ? (
+            <span className="animate-spin">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-loader"
+              >
+                <path d="M12 2v4" />
+                <path d="m16.2 7.8 2.9-2.9" />
+                <path d="M18 12h4" />
+                <path d="m16.2 16.2 2.9 2.9" />
+                <path d="M12 18v4" />
+                <path d="m4.9 19.1 2.9-2.9" />
+                <path d="M2 12h4" />
+                <path d="m4.9 4.9 2.9 2.9" />
+              </svg>
+            </span>
+          ) : (
+            "Sign Up"
+          )}
+        </button>
+      </form>
     </div>
   );
 };
