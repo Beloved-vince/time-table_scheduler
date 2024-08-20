@@ -25,10 +25,11 @@ SECRET_KEY = 'django-insecure-jga5@fw$3tf9s$lh77e#k=cu!3eugx76ozdd849%78ee2j6!i!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
+CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',

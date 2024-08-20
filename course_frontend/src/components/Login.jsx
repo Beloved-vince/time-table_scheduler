@@ -11,11 +11,18 @@ const Login = () => {
     const { name, value } = e.target;
     setData((prev) => ({ ...prev, [name]: value }));
   };
-  const handleSubmit = (e) => {
+  const base_url = "http://127.0.0.1:8000";
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       // make the api call to ubmit form
-      console.log(data);
+      const res = await fetch(`${base_url}/login`, {
+        method: "POST",
+        body: data,
+        headers: { "Content-Type": "application/json" },
+      });
+      const token_data = await res.json();
+      console.log(token_data);
     } catch (error) {
       console.log(error);
     }
