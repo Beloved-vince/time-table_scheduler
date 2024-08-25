@@ -1,10 +1,16 @@
+import axios from "axios";
 import React, { useState } from "react";
+import Toast from "./Toast";
+import { Link } from "react-router-dom";
+import isAuthContext from "../utils/authContext";
 
 const Upload = () => {
   const accessToken = localStorage.getItem("accessToken");
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [msg, setMsg] = useState("");
   const base_url = "http://127.0.0.1:8000/v1/api";
 
+  const { logout } = isAuthContext();
   const handleFileUpload = async (e) => {
     e.preventDefault();
 
@@ -26,20 +32,17 @@ const Upload = () => {
       const formData = new FormData();
       formData.append("file", uploadedFile);
 
-      const res = await fetch(`${base_url}/upload/`, {
-        method: "POST",
-        body: formData,
+      const res = await axios.post(`${base_url}/upload/`, formData, {
         headers: {
+          "Content-Type": "multi-part/formdata",
           Authorization: `Bearer ${accessToken}`,
         },
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! Status: ${res.status}`);
-      }
-
-      const response = await res.json();
-      console.log(response);
+      setMsg(res.data?.message);
+      setTimeout(() => {
+        setMsg("");
+      }, 3000);
     } catch (error) {
       console.log(error);
     }
@@ -47,6 +50,11 @@ const Upload = () => {
 
   return (
     <div className="flex flex-col justify-center items-center w-full h-screen">
+      {msg ? <Toast message={msg} /> : null}
+      <nav className="absolute top-5 right-5 space-x-3">
+        <Link to="/">Home</Link>
+        <button onClick={() => logout()}>Logout</button>
+      </nav>
       <h2 className="text-[#1a1a1a] text-4xl py-5 text-center">
         Upload your course allocation File
       </h2>

@@ -2,17 +2,14 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
-import {
-  createBrowserRouter,
-  Navigate,
-  RouterProvider,
-} from "react-router-dom";
-import "./index.css";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import SignUp from "./components/SignUp.jsx";
 import Login from "./components/Login.jsx";
 import Upload from "./components/Upload.jsx";
+import ProtectedRoute from "./ProtectedRoute.jsx";
+import { AuthContextProvider } from "./utils/authContext.jsx";
+import UnprotectedRoute from "./UnprotectedRoute.jsx";
 
-const token = localStorage.getItem("accessToken");
 const router = createBrowserRouter([
   {
     path: "/",
@@ -20,20 +17,34 @@ const router = createBrowserRouter([
   },
   {
     path: "/signup",
-    element: token ? <Navigate to="/upload" /> : <SignUp />,
+    element: (
+      <UnprotectedRoute>
+        <SignUp />
+      </UnprotectedRoute>
+    ),
   },
   {
     path: "/login",
-    element: token ? <Navigate to="/upload" /> : <Login />,
+    element: (
+      <UnprotectedRoute>
+        <Login />
+      </UnprotectedRoute>
+    ),
   },
   {
     path: "/upload",
-    element: token ? <Upload /> : <Navigate to="/login" />,
+    element: (
+      <ProtectedRoute>
+        <Upload />
+      </ProtectedRoute>
+    ),
   },
 ]);
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <AuthContextProvider>
+      <RouterProvider router={router} />
+    </AuthContextProvider>
   </StrictMode>
 );

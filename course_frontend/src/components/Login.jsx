@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import bg from "../assets/bg-t1.jpg";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import isAuthContext from "../utils/authContext";
+import axios from "axios";
 
 const Login = () => {
   const styles = {
     backgroundImage: `url(${bg})`,
   };
+  const { login } = isAuthContext();
 
   const navigate = useNavigate();
+
   const [data, setData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [err, setErr] = useState("");
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setData((prev) => ({ ...prev, [name]: value }));
@@ -21,22 +26,14 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // make the api call to submit form
-      const res = await fetch(`${base_url}/login/`, {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      });
-      const token_data = await res.json();
-
-      localStorage.setItem("accessToken", token_data.access);
-      localStorage.setItem("refreshToken", token_data.refresh);
-      if (token_data.access) {
-        navigate("/upload");
+      const res = await axios.post(`${base_url}/login/`, data);
+      const { access } = res.data;
+      if (access) {
+        localStorage.setItem("accessToken", access);
+        login();
+        navigate("/upload", { replace: true });
       }
-      setErr(token_data?.detail);
     } catch (error) {
-      console.log(error);
       setErr(error?.detail);
     } finally {
       setIsLoading(false);
